@@ -57,6 +57,9 @@ class TestOneHTML(unittest.TestCase):
         with self.assertRaises(TypeError):
             onehtml.get_all_images_from_html(self.sample_base_path)
         self.assertEqual(onehtml.get_all_images_from_html(self.target_html), self.images)
+
+    def test_convert_local_imgs_to_base64(self):
+        pass
         
 
 if __name__ == '__main__':

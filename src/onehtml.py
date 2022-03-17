@@ -1,12 +1,13 @@
 import base64
 from pathlib import Path
 import re
-from typing import Set, Dict, List
+from typing import Set, Dict, List, Iterator, Tuple
 
+ImgPathDict = Dict[Set[Path], Set[Path]]
 
 class onehtml:
     @staticmethod
-    def get_all_images_in_folder(folder: Path | str) -> Dict[Set[Path], Set[Path]]:
+    def get_all_images_in_folder(folder: Path | str) -> ImgPathDict:
         """
         Return a dictionary containing two lists of paths: one for png files and one for jpg/jpeg.
         """
@@ -27,6 +28,17 @@ class onehtml:
         return return_dict
 
     @staticmethod
+    def convert_local_imgs_to_base64(image_paths: Set[Path]) -> Iterator[Tuple[Path, str]]:
+        for image_path in image_paths:
+            with image_path.open('rb') as image:
+                image_data = image.read()
+                base64_encoded_data = base64.b64encode(image_data)
+                base64_string = base64_encoded_data.decode('utf-8')
+                yield (image_path, base64_string)
+
+
+
+    @staticmethod
     def find_all_img_paths_in_html(file_path: Path | str) -> List[str]:
         if isinstance(file_path, str):
             file_path = Path(file_path)
@@ -38,9 +50,7 @@ class onehtml:
             return re.findall(img_tax_regex, html.read())
 
     @staticmethod
-    def get_dict_of_img_paths(
-        img_paths: List[str], base_path: Path
-    ) -> Dict[Set[Path], Set[Path]]:
+    def get_dict_of_img_paths(img_paths: List[str], base_path: Path) -> ImgPathDict:
         return_dict = {"png": set(), "jpg": set()}
 
         for item in img_paths:
@@ -57,9 +67,18 @@ class onehtml:
         return return_dict
 
     @classmethod
-    def get_all_images_from_html(
-        cls, file_path: Path | str
-    ) -> Dict[Set[Path], Set[Path]]:
+    def get_all_images_from_html(cls, file_path: Path | str) -> ImgPathDict:
         matches: List[str] = cls.find_all_img_paths_in_html(file_path)
         return_dict = cls.get_dict_of_img_paths(matches, file_path.parent.resolve())
         return return_dict
+
+
+def main():
+    x = onehtml.get_all_images_from_html(Path(__file__).parent / 'test/sample/notes.html')
+    y = onehtml.convert_local_imgs_to_base64(x['png'])
+    for item in y:
+        print(item[0].name, len(item[1]))
+
+
+if __name__ == '__main__':
+    main()
